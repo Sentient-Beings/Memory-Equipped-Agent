@@ -1,0 +1,1 @@
+/home/sentient-beings/mnt/ws/build/turtlebot3_localization/ament_cmake_core/turtlebot3_localizationConfig-version.cmake

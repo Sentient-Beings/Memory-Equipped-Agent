@@ -1,0 +1,6 @@
+Invoking command in '/home/sentient-beings/mnt/ws/build/dynamixel_sdk': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/sentient-beings/mnt/ws/src/DynamixelSDK/dynamixel_sdk -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/sentient-beings/mnt/ws/install/dynamixel_sdk
+Invoked command in '/home/sentient-beings/mnt/ws/build/dynamixel_sdk' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/sentient-beings/mnt/ws/src/DynamixelSDK/dynamixel_sdk -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/home/sentient-beings/mnt/ws/install/dynamixel_sdk
+Invoking command in '/home/sentient-beings/mnt/ws/build/dynamixel_sdk': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/sentient-beings/mnt/ws/build/dynamixel_sdk -- -j16 -l16
+Invoked command in '/home/sentient-beings/mnt/ws/build/dynamixel_sdk' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/sentient-beings/mnt/ws/build/dynamixel_sdk -- -j16 -l16
+Invoking command in '/home/sentient-beings/mnt/ws/build/dynamixel_sdk': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/sentient-beings/mnt/ws/build/dynamixel_sdk
+Invoked command in '/home/sentient-beings/mnt/ws/build/dynamixel_sdk' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/sentient-beings/mnt/ws/build/dynamixel_sdk
