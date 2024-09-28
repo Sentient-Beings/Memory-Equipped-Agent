@@ -1,0 +1,47 @@
+{
+    "name": "sentient-beings dev container",
+    "privileged": true,
+    "build": {
+        "dockerfile": "RAGfrRobots.Dockerfile",
+        "context": "../.."
+    },
+    "workspaceFolder": "/home/sentient-beings/mnt/ws",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/sentient-beings/mnt,type=bind,consistency=cached",
+    "containerEnv": {
+        "DISPLAY": "${env:DISPLAY}",
+        "NVIDIA_VISIBLE_DEVICES": "all",
+        "NVIDIA_DRIVER_CAPABILITIES": "all",
+        "ROS_DOMAIN_ID": 30
+    },
+    "runArgs": [
+        "--net=host",
+        "--gpus",
+        "all"
+    ],
+    "mounts": [
+       "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
+       "source=/dev,target=/dev,type=bind,consistency=cached" //TODO: this is sort of terrible but other options are too complicated for recognizing detached/reattached devices
+    ],
+
+    "postCreateCommand": [
+        "sh",
+        "-c",
+        "echo 'Starting post-create commands' && chown -R $(id -u):$(id -g) /home/sentient-beings && echo 'Ownership changed' && chmod +x /home/sentient-beings/mnt/util/container_scripts/build_install.sh && echo 'Permissions set' && /home/sentient-beings/mnt/util/container_scripts/build_install.sh && echo 'build_install.sh executed' && echo 'source /home//mnt/ws/install/setup.bash;export PATH=$PATH:/home//mnt/util/container_scripts/' >> /home/sentient-beings/.bashrc && echo 'Post-create commands completed'"
+    ],
+
+    "otherPortsAttributes": {
+        "onAutoForward": "ignore"
+    },
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",
+                "ms-vscode.cpptools-extension-pack",
+                "donjayamanne.python-extension-pack",
+                "ms-iot.vscode-ros"
+            ]
+        }
+    }
+
+}
