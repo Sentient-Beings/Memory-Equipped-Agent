@@ -1,1 +1,0 @@
-/home/sentient-beings/mnt/ws/src/turtlebot3_localization/launch/nav2_amcl.launch.py

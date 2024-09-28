@@ -1,1 +1,0 @@
-/home/sentient-beings/mnt/ws/src/turtlebot3/turtlebot3_cartographer/launch/cartographer_rviz.launch.py
