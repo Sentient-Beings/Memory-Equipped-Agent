@@ -1,16 +1,24 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
+from nav_msgs.msg import Odometry
 from cv_bridge import CvBridge
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
+from langchain_community.embeddings import HuggingFaceBgeEmbeddings
+from groq import Groq
 import cv2
-from dotenv import load_dotenv
 import os
 import base64
-from groq import Groq
 import json
+from datetime import datetime
+from dotenv import load_dotenv
+
 
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+
 
 if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY is not set in the .env file")
@@ -18,33 +26,80 @@ if not GROQ_API_KEY:
 class ImageSubscriber(Node):
     def __init__(self):
         super().__init__('image_subscriber')
+        self.image_callback_group = MutuallyExclusiveCallbackGroup()
+        self.odometry_callback_group = MutuallyExclusiveCallbackGroup()
+        
+        # embedding model
+        self.embedding_model_name = "BAAI/bge-m3"
+        self.model_kwargs = {'device': 'cuda'}
+        self.encode_kwargs = {"normalize_embeddings": True}
+        self.hf = HuggingFaceBgeEmbeddings(
+            model_name=self.embedding_model_name, model_kwargs=self.model_kwargs, encode_kwargs=self.encode_kwargs
+        )
+        
+        # subscribers 
         self.subscription = self.create_subscription(
             Image,
             '/camera/image_raw',
             self.image_callback,
-            10)
+            10,
+            callback_group=self.image_callback_group)
         self.cv_bridge = CvBridge()
+        
+        self.subscription_2 = self.create_subscription(
+            Odometry,
+            '/odom',
+            self.odometry_callback,
+            10,
+            callback_group=self.odometry_callback_group)
         
         # Initialize Groq client
         self.client = Groq()
-        self.get_logger().info('Image subscriber node has been initialized')
+        self.get_logger().info('Creating Memories')
 
         # Timer to control the rate of processing
-        self.timer_period = 20.0  # seconds
+        self.timer_period = 10.0
         self.timer = self.create_timer(self.timer_period, self.process_image)
         self.latest_image_msg = None
+        self.latest_odometry_msg = None
+        self.embedding = None
+        self.location_memory = {}
+        
+    def odometry_callback(self, msg):
+        self.latest_odometry_msg = msg
 
+    
+    def get_location_memory(self):
+        self.robot_x = self.latest_odometry_msg.pose.pose.position.x
+        self.robot_y = self.latest_odometry_msg.pose.pose.position.y
+        now = datetime.now()
+        self.location_memory = {
+            'Robot x coordinate': self.robot_x,
+            'Robot y coordinate': self.robot_y,
+            'Timestamp': now.strftime("%Y-%m-%d %H:%M:%S")
+        }
+        return self.location_memory
+        
     def image_callback(self, msg):
-        self.get_logger().info('Received image message')
         self.latest_image_msg = msg
-
+    
+    def embed_memory(self):
+        self.get_logger().info('Embedding memory...')
+        self.embedding = None
+        while self.embedding is None:
+            try:
+                self.embedding = self.hf.embed_query(self.memory_chunk)
+            except Exception as e:
+                self.get_logger().error('Error embedding memory: %s' % str(e))
+        return self.embedding
+	
     def process_image(self):
         if self.latest_image_msg is None:
             self.get_logger().info('No image message to process')
             return
 
         try:
-            self.get_logger().info('Processing image')
+            self.get_logger().info('Image is being processed...')
             # image process block
             cv_image = self.cv_bridge.imgmsg_to_cv2(self.latest_image_msg, "bgr8")
             _, buffer = cv2.imencode('.jpg', cv_image)
@@ -68,7 +123,6 @@ class ImageSubscriber(Node):
                 {"type": "text", "text": user_prompt},
             ]
             
-            self.get_logger().info('Sending image to Groq API for captioning')
             chat_completion = self.client.chat.completions.create(
                 model="llama-3.2-11b-vision-preview",
                 messages=[
@@ -86,17 +140,26 @@ class ImageSubscriber(Node):
             )
             
             self.structured_output = json.loads(chat_completion.choices[0].message.content)
-            self.get_logger().info('Structured output: %s' % self.structured_output)
-
+            self.memory_chunk = json.dumps({**self.structured_output,**self.get_location_memory()}) 
+            self.get_logger().info(f'Memory chunk: {self.memory_chunk}')
+            self.embedding = self.embed_memory()
+            self.get_logger().info(f'Embedding: {self.embedding}')
+            self.memory_chunk = None
+            
         except Exception as e:
             self.get_logger().error('Error processing image: %s' % str(e))
 
 def main(args=None):
     rclpy.init(args=args)
     image_subscriber = ImageSubscriber()
-    rclpy.spin(image_subscriber)
-    image_subscriber.destroy_node()
-    rclpy.shutdown()
+    executor = MultiThreadedExecutor()
+    executor.add_node(image_subscriber)
+    try:
+        executor.spin()
+    finally:
+        executor.shutdown() 
+        image_subscriber.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
