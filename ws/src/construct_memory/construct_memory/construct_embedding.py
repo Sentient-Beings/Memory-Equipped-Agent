@@ -1,3 +1,4 @@
+# ros related imports
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -5,23 +6,39 @@ from nav_msgs.msg import Odometry
 from cv_bridge import CvBridge
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
-from langchain_community.embeddings import HuggingFaceBgeEmbeddings
-from groq import Groq
 import cv2
+
+# langchain related imports
+from langchain_community.embeddings import HuggingFaceBgeEmbeddings
+from uuid import uuid4
+from langchain_core.documents import Document
+from langchain_pinecone import PineconeVectorStore
+
+# model related imports
+from groq import Groq
 import os
 import base64
 import json
 from datetime import datetime
 from dotenv import load_dotenv
 
+# pinecone related imports
+from pinecone import Pinecone, ServerlessSpec
+import time
+
 
 load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 
 
 if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY is not set in the .env file")
+if not HUGGINGFACE_API_KEY:
+    raise ValueError("HUGGINGFACE_API_KEY is not set in the .env file")
+if not PINECONE_API_KEY:
+    raise ValueError("PINECONE_API_KEY is not set in the .env file")
 
 class ImageSubscriber(Node):
     def __init__(self):
@@ -30,14 +47,33 @@ class ImageSubscriber(Node):
         self.odometry_callback_group = MutuallyExclusiveCallbackGroup()
         
         # embedding model
+        self.get_logger().info('Initializing embedding model...')
         self.embedding_model_name = "BAAI/bge-m3"
         self.model_kwargs = {'device': 'cuda'}
         self.encode_kwargs = {"normalize_embeddings": True}
-        self.hf = HuggingFaceBgeEmbeddings(
+        self.hf_embedding = HuggingFaceBgeEmbeddings(
             model_name=self.embedding_model_name, model_kwargs=self.model_kwargs, encode_kwargs=self.encode_kwargs
         )
         
+        # pinecone serverless 
+        self.get_logger().info('Initializing pinecone serverless...')
+        pc_store = Pinecone(api_key=PINECONE_API_KEY)
+        self.index_name = "rag-for-robots"
+        self.existing_indexes = [index_info["name"] for index_info in pc_store.list_indexes()]
+        if self.index_name not in self.existing_indexes:
+            pc_store.create_index(
+                name=self.index_name,
+                dimension=1024,
+                metric="cosine",
+                spec=ServerlessSpec(cloud="aws", region="us-east-1"),
+            )
+            while not pc_store.describe_index(self.index_name).status["ready"]:
+                time.sleep(1)
+        self.index = pc_store.Index(self.index_name)
+        self.vector_store = PineconeVectorStore(index=self.index, embedding=self.hf_embedding)
+        
         # subscribers 
+        self.get_logger().info('Initializing subscribers...')
         self.subscription = self.create_subscription(
             Image,
             '/camera/image_raw',
@@ -54,8 +90,8 @@ class ImageSubscriber(Node):
             callback_group=self.odometry_callback_group)
         
         # Initialize Groq client
+        self.get_logger().info('Initializing Groq client...')
         self.client = Groq()
-        self.get_logger().info('Creating Memories')
 
         # Timer to control the rate of processing
         self.timer_period = 10.0
@@ -64,10 +100,10 @@ class ImageSubscriber(Node):
         self.latest_odometry_msg = None
         self.embedding = None
         self.location_memory = {}
+        self.get_logger().info('Creating Memories')
         
     def odometry_callback(self, msg):
         self.latest_odometry_msg = msg
-
     
     def get_location_memory(self):
         self.robot_x = self.latest_odometry_msg.pose.pose.position.x
@@ -83,16 +119,17 @@ class ImageSubscriber(Node):
     def image_callback(self, msg):
         self.latest_image_msg = msg
     
-    def embed_memory(self):
-        self.get_logger().info('Embedding memory...')
-        self.embedding = None
-        while self.embedding is None:
-            try:
-                self.embedding = self.hf.embed_query(self.memory_chunk)
-            except Exception as e:
-                self.get_logger().error('Error embedding memory: %s' % str(e))
-        return self.embedding
-	
+    def embed_and_save_memory(self):
+        self.get_logger().info('Embedding and saving memory...')
+        if self.memory_chunk is not None:
+            memory_chunk = Document(
+                page_content=self.memory_chunk,
+                metadata={"source": "visited location"},)
+            documents = [memory_chunk]
+            uuids = [str(uuid4())]
+            self.vector_store.add_documents(documents=documents, ids=uuids)
+            self.get_logger().info('Memory chunk saved')
+            
     def process_image(self):
         if self.latest_image_msg is None:
             self.get_logger().info('No image message to process')
@@ -131,7 +168,7 @@ class ImageSubscriber(Node):
                         "content": message_content,
                     }
                 ],
-                temperature=1,
+                temperature=1,  
                 max_tokens=1024,
                 top_p=1,
                 stream=False,
@@ -141,9 +178,7 @@ class ImageSubscriber(Node):
             
             self.structured_output = json.loads(chat_completion.choices[0].message.content)
             self.memory_chunk = json.dumps({**self.structured_output,**self.get_location_memory()}) 
-            self.get_logger().info(f'Memory chunk: {self.memory_chunk}')
-            self.embedding = self.embed_memory()
-            self.get_logger().info(f'Embedding: {self.embedding}')
+            self.embed_and_save_memory()
             self.memory_chunk = None
             
         except Exception as e:
