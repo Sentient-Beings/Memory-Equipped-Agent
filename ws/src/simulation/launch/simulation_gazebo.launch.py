@@ -13,10 +13,10 @@ from launch_ros.actions import Node
 def generate_launch_description():
     launch_file_dir = os.path.join(get_package_share_directory('turtlebot3_gazebo'), 'launch')
     pkg_gazebo_ros = get_package_share_directory('gazebo_ros')
-    rviz_config_dir = os.path.join(get_package_share_directory('environment_mapping'), 'config', 'debug.rviz')
+    rviz_config_dir = os.path.join(get_package_share_directory('simulation'), 'config', 'debug.rviz')
 
     # Adding my custom room model: this way the model is available in Gazebo 
-    my_room_pkg = get_package_share_directory('environment_mapping')
+    my_room_pkg = get_package_share_directory('simulation')
     gazebo_models_path = os.path.join(my_room_pkg, 'models')
     if 'GAZEBO_MODEL_PATH' in os.environ:
         os.environ['GAZEBO_MODEL_PATH'] =  os.environ['GAZEBO_MODEL_PATH'] + ':' + gazebo_models_path
@@ -28,7 +28,7 @@ def generate_launch_description():
     y_pose = LaunchConfiguration('y_pose', default='-0.5')
 
     world = os.path.join(
-        get_package_share_directory('environment_mapping'),
+        get_package_share_directory('simulation'),
         'worlds',
         'house_10.world'
     )
