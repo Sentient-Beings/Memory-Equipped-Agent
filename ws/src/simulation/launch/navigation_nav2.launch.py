@@ -19,9 +19,6 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
-    use_composition = LaunchConfiguration('use_composition')
-    container_name = LaunchConfiguration('container_name')
-    container_name_full = (namespace, '/', container_name)
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
     
@@ -76,3 +73,136 @@ def generate_launch_description():
         default_value='true',
         description='Automatically startup the nav2 stack',
     )
+    
+    declare_use_respawn_cmd = DeclareLaunchArgument(
+        'use_respawn',
+        default_value='False',
+        description='Whether to respawn if a node crashes. Applied when composition is disabled.',
+    )
+
+    declare_log_level_cmd = DeclareLaunchArgument(
+        'log_level', default_value='info', description='log level'
+    )
+    
+    load_nodes = GroupAction(
+        actions=[
+            SetParameter('use_sim_time', use_sim_time),
+            Node(
+                package='nav2_controller',
+                executable='controller_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings + [('cmd_vel', 'cmd_vel_nav')],
+            ),
+            Node(
+                package='nav2_smoother',
+                executable='smoother_server',
+                name='smoother_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings,
+            ),
+            Node(
+                package='nav2_planner',
+                executable='planner_server',
+                name='planner_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings,
+            ),
+            Node(
+                package='nav2_behaviors',
+                executable='behavior_server',
+                name='behavior_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings + [('cmd_vel', 'cmd_vel_nav')],
+            ),
+            Node(
+                package='nav2_bt_navigator',
+                executable='bt_navigator',
+                name='bt_navigator',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings,
+            ),
+            Node(
+                package='nav2_waypoint_follower',
+                executable='waypoint_follower',
+                name='waypoint_follower',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings,
+            ),
+            Node(
+                package='nav2_velocity_smoother',
+                executable='velocity_smoother',
+                name='velocity_smoother',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings
+                + [('cmd_vel', 'cmd_vel_nav')],
+            ),
+            Node(
+                package='nav2_collision_monitor',
+                executable='collision_monitor',
+                name='collision_monitor',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings,
+            ),
+            Node(
+                package='opennav_docking',
+                executable='opennav_docking',
+                name='docking_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings,
+            ),
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_navigation',
+                output='screen',
+                arguments=['--ros-args', '--log-level', log_level],
+                parameters=[{'autostart': autostart}, {'node_names': lifecycle_nodes}],
+            ),
+        ],
+    )
+    
+    ld = LaunchDescription()
+    ld.add_action(declare_namespace_cmd)
+    ld.add_action(declare_use_sim_time_cmd)
+    ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_autostart_cmd)
+    ld.add_action(declare_use_respawn_cmd)
+    ld.add_action(declare_log_level_cmd)
+    ld.add_action(load_nodes)
+    return ld

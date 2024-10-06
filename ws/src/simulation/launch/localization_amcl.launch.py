@@ -7,7 +7,7 @@ from launch.actions import DeclareLaunchArgument
 from launch.actions import TimerAction
 
 def generate_launch_description():
-    package_name = 'turtlebot3_localization'
+    package_name = 'simulation'
     params_file = LaunchConfiguration('params_file')
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
@@ -52,7 +52,7 @@ def generate_launch_description():
         emulate_tty=True),)
     
     ld.add_action(TimerAction(
-        period=5.0, # we add a delay of 5 seconds between rviz and the rest of the nodes so that map_server can load the map before amcl starts
+        period=10.0, # we add a delay of 5 seconds between rviz and the rest of the nodes so that map_server can load the map before amcl starts
         actions=[
             Node(package="nav2_map_server",
                 executable="map_server",
