@@ -3,6 +3,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from nav_msgs.msg import Odometry
+from geometry_msgs.msg import PoseWithCovarianceStamped
 from cv_bridge import CvBridge
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
@@ -83,8 +84,8 @@ class ImageSubscriber(Node):
         self.cv_bridge = CvBridge()
         
         self.subscription_2 = self.create_subscription(
-            Odometry,
-            '/odom',
+            PoseWithCovarianceStamped,
+            '/amcl_pose',
             self.odometry_callback,
             10,
             callback_group=self.odometry_callback_group)

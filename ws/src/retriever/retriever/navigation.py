@@ -67,6 +67,6 @@ class Navigation:
 if __name__ == '__main__':
     try:
         nav = Navigation()
-        nav.navigate_to_goal(17.86, -0.77)
+        nav.navigate_to_goal(2.0, -0.86)
     finally:
         rclpy.shutdown()

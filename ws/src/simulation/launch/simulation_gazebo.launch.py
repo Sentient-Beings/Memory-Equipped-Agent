@@ -70,6 +70,14 @@ def generate_launch_description():
         name='rviz_node',
         parameters=[{'use_sim_time': True}],
         arguments=['-d', rviz_config_dir])
+    
+    # static_transform_publisher = Node(
+    #     package='tf2_ros',
+    #     executable='static_transform_publisher',
+    #     name='static_transform_publisher',
+    #     output='screen',
+    #     arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom']
+    # )
 
     ld = LaunchDescription()
 
@@ -77,6 +85,7 @@ def generate_launch_description():
     ld.add_action(gzclient_cmd)
     ld.add_action(robot_state_publisher_cmd)
     ld.add_action(spawn_turtlebot_cmd)
+    # ld.add_action(static_transform_publisher)
     # ld.add_action(rviz_node)
 
     return ld
