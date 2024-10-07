@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
+from . import retriever_agent
 
 class UserInputSubscriber(Node):
     def __init__(self):
@@ -12,10 +13,12 @@ class UserInputSubscriber(Node):
             10)
         self.subscription 
         self.latest_user_input = None
+        self.retriever_agent = retriever_agent.RetrieverAgent()
 
     def user_input_callback(self, msg):
         self.latest_user_input = msg.data
-        self.get_logger().info(f'Received user input: "{self.latest_user_input}"')
+        agent_response = self.retriever_agent.execute_graph(self.latest_user_input)
+        self.get_logger().info(f'Agent response: "{agent_response}"')
 
 def main(args=None):
     rclpy.init(args=args)

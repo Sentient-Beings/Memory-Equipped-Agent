@@ -13,6 +13,7 @@ from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
+from . import navigation
 import time
 import os
 
@@ -91,6 +92,8 @@ class RetrieverAgent:
             x (float): X location of the goal
             y (float): Y location of the goal
         '''
+        navigation.set_flag.getter_set_flag(lambda: True)
+        navigation.navigation_to_pose.getter_pose_command(lambda: (x, y))
         return {"nav_success": True}
 
     def tool_declaration(self):
@@ -98,6 +101,7 @@ class RetrieverAgent:
         return tools
     
     def reasoning_node(self, RetrieverState) -> RetrieverState:
+        navigation.set_flag.getter_set_flag(lambda: False)
         tools = self.tool_declaration()
         model_w_tools = self.model.bind_tools(tools)
         if RetrieverState["context"] is None:
