@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'user_input_subscriber = retriever.retriever.user_interface:main',
+            'navigation = retriever.navigation:main',
         ],
     },
 )

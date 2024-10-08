@@ -13,7 +13,7 @@ from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
-from . import navigation
+import navigation
 import time
 import os
 
@@ -23,42 +23,67 @@ GROQ_API_KEY        = os.getenv("GROQ_API_KEY")
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 PINECONE_API_KEY    = os.getenv("PINECONE_API_KEY")
 LANGCHAIN_API_KEY   = os.getenv("LANGCHAIN_API_KEY")
+os.environ["LANGSMITH_TRACING"] = "true"
+os.environ["LANGCHAIN_PROJECT"] = "Rag-for-Robots"
 
 
 class RetrieverAgent:
     def __init__(self):
+        print("Initializing RetrieverAgent...")
+        print("Setting up ChatGroq model...")
         self.model = ChatGroq(
             model="llama3-70b-8192",
             temperature=0,
             max_tokens=1000,
             request_timeout=60
         )
+        print("ChatGroq model initialized.")
+
+        print("Connecting to Pinecone...")
         self.pc = Pinecone(api_key=PINECONE_API_KEY)
+        print("Pinecone connection established.")
+
+        print("Setting up embedding model...")
         self.model_name = "BAAI/bge-m3"
         self.model_kwargs = {"device": "cuda"}
         self.encode_kwargs = {"normalize_embeddings": True}
         self.embeddings = HuggingFaceBgeEmbeddings(
             model_name=self.model_name, model_kwargs=self.model_kwargs, encode_kwargs=self.encode_kwargs)
+        print("Embedding model initialized.")
+
+        print("Checking Pinecone index...")
         self.index_name = "rag-for-robots"
         self.existing_indexes = [index_info["name"] for index_info in self.pc.list_indexes()]
         if self.index_name not in self.existing_indexes:
+            print(f"Creating new Pinecone index: {self.index_name}")
             self.pc.create_index(
                 name=self.index_name,
                 dimension=1024,
                 metric="cosine",
                 spec=ServerlessSpec(cloud="aws", region="us-east-1"),
             )
+            print("Waiting for index to be ready...")
             while not self.pc.describe_index(self.index_name).status["ready"]:
                 time.sleep(1)
+            print("Index is ready.")
+        else:
+            print(f"Using existing Pinecone index: {self.index_name}")
 
+        print("Initializing vector store...")
         index = self.pc.Index(self.index_name)
         self.vector_store = PineconeVectorStore(index=index, embedding=self.embeddings)
+        print("Vector store initialized.")
+
+        print("Setting up prompt template...")
         self.set_template = """Extract the location coordinates according to the users query: 
                     {context}
 
                     Query: {query}
                 """
         self.set_prompt = ChatPromptTemplate.from_template(self.set_template)
+        print("Prompt template set.")
+
+        print("RetrieverAgent initialization complete.")
         
     class RetrieverState(TypedDict):
         user_query: str
@@ -67,7 +92,7 @@ class RetrieverAgent:
         nav_success: bool
 
         
-    def retrieval_node(RetrieverState) -> RetrieverState:
+    def retrieval_node(self, RetrieverState) -> RetrieverState:
         user_query = RetrieverState["user_query"]
 
         retriever = self.vector_store.as_retriever(
@@ -92,8 +117,8 @@ class RetrieverAgent:
             x (float): X location of the goal
             y (float): Y location of the goal
         '''
-        navigation.set_flag.getter_set_flag(lambda: True)
-        navigation.navigation_to_pose.getter_pose_command(lambda: (x, y))
+        # navigation.set_flag.getter_set_flag(lambda: True)
+        # navigation.navigation_to_pose.getter_pose_command(lambda: (x, y))
         return {"nav_success": True}
 
     def tool_declaration(self):

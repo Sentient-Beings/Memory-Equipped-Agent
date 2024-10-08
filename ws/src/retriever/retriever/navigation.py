@@ -3,29 +3,42 @@ from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 import rclpy
 from rclpy.node import Node
 from rclpy.duration import Duration
-from typing import Callable
-from . import retriever_agent
+from typing import Callable, Tuple
+import retriever_agent
 
 # setup the goal position retrieval from the retriever agent
-navigation_to_pose = Callable[[], (float, float)]
-_navigation_to_pose = navigation_to_pose = lambda: (0.0, 0.0)
+NavigationToPoseType = Callable[[], Tuple[float, float]]
+_navigation_to_pose: NavigationToPoseType = lambda: (0.0, 0.0)
 class navigation_to_pose:
-    def getter_pose_command(getter: navigation_to_pose):
+    @staticmethod
+    def getter_pose_command(getter: NavigationToPoseType):
         global _navigation_to_pose
         _navigation_to_pose = getter
-    def get_pose_command():
-        pose = _navigation_to_pose()
-        return pose
 
-set_flag = Callable[[], bool]
-_set_flag = set_flag = lambda: False
+    @staticmethod
+    def get_pose_command() -> Tuple[float, float]:
+        return _navigation_to_pose()
+
+# setup the flag to navigate to goal
+SetFlagType = Callable[[], bool]
+_set_flag: SetFlagType = lambda: False
 class set_flag:
-    def getter_set_flag(getter: set_flag):
+    def __init__(self):
+        self.flag = False
+
+    @staticmethod
+    def getter_set_flag(getter: SetFlagType):
         global _set_flag
         _set_flag = getter
-    def get_set_flag():
-        flag = _set_flag()
-        return flag
+
+    def get_set_flag(self):
+        self.flag = _set_flag()
+
+    def get_flag(self) -> bool:
+        return self.flag
+
+    def set_flag(self, flag: bool):
+        self.flag = flag
 
 class Navigation(Node):
     def __init__(self):
@@ -46,10 +59,10 @@ class Navigation(Node):
         self.timer = self.create_timer(1, self.timer_callback)
 
     def timer_callback(self):
-        if set_flag.get_set_flag():
+        if set_flag.get_flag():
             (x, y) = navigation_to_pose.get_pose_command()
             self.navigate_to_goal(x, y)
-            set_flag.get_set_flag() = False
+            set_flag.set_flag(False)
 
     def amcl_pose_callback(self, msg):
         self.initial_pose = msg
