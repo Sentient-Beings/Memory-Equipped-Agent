@@ -13,7 +13,8 @@ from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
-import navigation
+import socket
+import json
 import time
 import os
 
@@ -26,6 +27,8 @@ LANGCHAIN_API_KEY   = os.getenv("LANGCHAIN_API_KEY")
 os.environ["LANGSMITH_TRACING"] = "true"
 os.environ["LANGCHAIN_PROJECT"] = "Rag-for-Robots"
 
+HOST = 'localhost'
+PORT = 65432
 
 class RetrieverAgent:
     def __init__(self):
@@ -82,7 +85,6 @@ class RetrieverAgent:
                 """
         self.set_prompt = ChatPromptTemplate.from_template(self.set_template)
         print("Prompt template set.")
-
         print("RetrieverAgent initialization complete.")
         
     class RetrieverState(TypedDict):
@@ -117,16 +119,25 @@ class RetrieverAgent:
             x (float): X location of the goal
             y (float): Y location of the goal
         '''
-        # navigation.set_flag.getter_set_flag(lambda: True)
-        # navigation.navigation_to_pose.getter_pose_command(lambda: (x, y))
+        while True:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                try:
+                    s.connect((HOST, PORT))
+                    s.sendall(json.dumps({"x_coord": x, "y_coord": y, "navigate": True}).encode('utf-8'))
+                    break
+                except ConnectionRefusedError:
+                    print("Connection refused. Retrying...")
+                    time.sleep(1)
+                    continue
         return {"nav_success": True}
+                
+
 
     def tool_declaration(self):
         tools = [self.navigate_to_goal]
         return tools
     
     def reasoning_node(self, RetrieverState) -> RetrieverState:
-        navigation.set_flag.getter_set_flag(lambda: False)
         tools = self.tool_declaration()
         model_w_tools = self.model.bind_tools(tools)
         if RetrieverState["context"] is None:

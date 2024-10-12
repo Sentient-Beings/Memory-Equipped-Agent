@@ -128,6 +128,11 @@ class ImageSubscriber(Node):
                 metadata={"source": "visited location"},)
             documents = [memory_chunk]
             uuids = [str(uuid4())]
+            '''
+            get similar chunks with respect to my chunk 
+            compare the similarity score with all the retrieved chunks ( according to the threshold)
+            remove the old one and store the new one 
+            '''
             self.vector_store.add_documents(documents=documents, ids=uuids)
             self.get_logger().info('Memory chunk saved')
             
@@ -178,7 +183,7 @@ class ImageSubscriber(Node):
             )
             
             self.structured_output = json.loads(chat_completion.choices[0].message.content)
-            self.memory_chunk = json.dumps({**self.structured_output,**self.get_location_memory()}) 
+            self.memory_chunk = json.dumps({**self.structured_output,**self.get_location_memory()})
             self.embed_and_save_memory()
             self.memory_chunk = None
             
