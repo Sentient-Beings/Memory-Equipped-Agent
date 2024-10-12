@@ -88,6 +88,9 @@ class RetrieverAgent:
         print("RetrieverAgent initialization complete.")
         
     class RetrieverState(TypedDict):
+        '''
+        This is the state of the retriever agent.
+        '''
         user_query: str
         context: str
         messages: Annotated[list[AnyMessage], add_messages]
@@ -95,6 +98,9 @@ class RetrieverAgent:
 
         
     def retrieval_node(self, RetrieverState) -> RetrieverState:
+        '''
+        This function is used to retrieve the context from the vector store based on the user's query.
+        '''
         user_query = RetrieverState["user_query"]
 
         retriever = self.vector_store.as_retriever(
@@ -131,13 +137,18 @@ class RetrieverAgent:
                     continue
         return {"nav_success": True}
                 
-
-
+    
     def tool_declaration(self):
+        '''
+        This function is used to declare the tools that the retriever agent has.
+        '''
         tools = [self.navigate_to_goal]
         return tools
     
     def reasoning_node(self, RetrieverState) -> RetrieverState:
+        '''
+        This function is used to reason about the user's query and generate a response.
+        '''
         tools = self.tool_declaration()
         model_w_tools = self.model.bind_tools(tools)
         if RetrieverState["context"] is None:
@@ -152,6 +163,11 @@ class RetrieverAgent:
         return {"messages": [agent_response]}
     
     def router(self, RetrieverState) -> Literal["navigate_to_goal", "__end__"]:
+        '''
+        This function is used to route the retriever agent to the appropriate node based on the user's query.
+        If the user's query requires navigation, the agent will navigate to the goal location.
+        Otherwise, the agent will reason about the user's query and generate a response.
+        '''
         messages = RetrieverState["messages"]
         last_message = messages[-1]
         if last_message.tool_calls:
@@ -159,6 +175,9 @@ class RetrieverAgent:
         return END
     
     def graph_definition(self):
+        '''
+        This function is used to define the graph of the retriever agent.
+        '''
         tools = self.tool_declaration()
         builder = StateGraph(self.RetrieverState)
         builder.add_node("retrieval", self.retrieval_node)
@@ -176,6 +195,9 @@ class RetrieverAgent:
         return graph
     
     def execute_graph(self, user_query: str):
+        '''
+        This function is used to execute the graph of the retriever agent.
+        '''
         initial_state = self.RetrieverState({
             "user_query": user_query,
             "context": None,

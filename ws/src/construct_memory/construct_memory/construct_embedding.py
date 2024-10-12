@@ -104,9 +104,16 @@ class ImageSubscriber(Node):
         self.get_logger().info('Creating Memories')
         
     def odometry_callback(self, msg):
+        '''
+        This function is called whenever the robot's odometry is updated.
+        '''
         self.latest_odometry_msg = msg
     
     def get_location_memory(self):
+        '''
+        This function is used to get the current location of the robot and store it in the location_memory dictionary.
+        Later, this location_memory dictionary will be used to create embeddings.
+        '''
         self.robot_x = self.latest_odometry_msg.pose.pose.position.x
         self.robot_y = self.latest_odometry_msg.pose.pose.position.y
         now = datetime.now()
@@ -118,9 +125,15 @@ class ImageSubscriber(Node):
         return self.location_memory
         
     def image_callback(self, msg):
+        '''
+        This function is called whenever a new image is received.
+        '''
         self.latest_image_msg = msg
     
     def embed_and_save_memory(self):
+        '''
+        This function is used to embed the memory chunk and save it to the vector store.
+        '''
         self.get_logger().info('Embedding and saving memory...')
         if self.memory_chunk is not None:
             memory_chunk = Document(
@@ -137,6 +150,9 @@ class ImageSubscriber(Node):
             self.get_logger().info('Memory chunk saved')
             
     def process_image(self):
+        '''
+        This function is used to process the image and create a memory chunk.
+        '''
         if self.latest_image_msg is None:
             self.get_logger().info('No image message to process')
             return
@@ -191,6 +207,9 @@ class ImageSubscriber(Node):
             self.get_logger().error('Error processing image: %s' % str(e))
 
 def main(args=None):
+    '''
+    This is the main function that initializes the ROS node and starts the processing loop.
+    '''
     rclpy.init(args=args)
     image_subscriber = ImageSubscriber()
     executor = MultiThreadedExecutor()

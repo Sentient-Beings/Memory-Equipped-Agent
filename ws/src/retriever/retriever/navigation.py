@@ -49,6 +49,11 @@ class Navigation(Node):
         self.get_logger().info('Navigation node initialization complete')
       
     def timer_callback(self):
+        '''
+        This function is used to check for incoming connections from the retriever agent.
+        If a connection is established, the data is received and processed.
+        The data is expected to be in JSON format and contains the goal coordinates and a boolean flag to indicate if navigation is required.
+        '''
         readable, writable, exceptional = select.select(self.inputs, self.outputs, self.inputs, 0)
 
         for s in readable:
@@ -94,6 +99,10 @@ class Navigation(Node):
             s.close()
 
     def amcl_pose_callback(self, msg):
+        '''
+        This function is used to update the initial pose of the robot.
+        The initial pose is used to set the starting point for navigation.
+        '''
         self.get_logger().info('Received new AMCL pose')
         
         self.initial_pose.header = msg.header
@@ -111,6 +120,10 @@ class Navigation(Node):
         self.get_logger().info(f'New pose - x: {msg.pose.pose.position.x}, y: {msg.pose.pose.position.y}')
 
     def navigate_to_goal(self, goal_pose_x, goal_pose_y):
+        '''
+        This function is used to navigate the robot to the goal location.
+        We are using the BasicNavigator class from nav2_simple_commander to navigate the robot.
+        '''
         if self.initial_pose is None:
             self.get_logger().error('Initial pose is not set')
             return False
@@ -151,6 +164,9 @@ class Navigation(Node):
         return True
 
     def cancel_navigation(self):
+        '''
+        This function is used to cancel the current navigation task.
+        '''
         self.navigator.cancelTask()
 
 

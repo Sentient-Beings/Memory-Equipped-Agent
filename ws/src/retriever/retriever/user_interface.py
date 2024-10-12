@@ -55,6 +55,9 @@ class RAGNavigationGUI:
             self.add_message("Agent", "Empty input. Please try again.", self.agent_avatar)
 
     def process_query(self, user_input):
+        '''
+        This function is used to process the user's query and send it to the retriever agent.
+        '''
         self.add_message("Agent", "Processing your query...", self.agent_avatar)
         agent_response = self.retriever_agent.execute_graph(user_input)
         self.add_message("Agent", agent_response["context"], self.agent_avatar)
