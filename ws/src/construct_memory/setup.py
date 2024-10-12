@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'construct_embedding = construct_memory.construct_embedding:main',
+            'amcl_sub = construct_memory.amcl_sub:main',
         ],
     },
 )

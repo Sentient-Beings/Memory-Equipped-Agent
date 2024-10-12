@@ -148,6 +148,13 @@ class ImageSubscriber(Node):
             '''
             self.vector_store.add_documents(documents=documents, ids=uuids)
             self.get_logger().info('Memory chunk saved')
+    
+    def write_to_file(self, memory_chunk):
+        '''
+        This function is used to write the memory chunk to a file.
+        '''
+        with open('memory_chunks.jsonl', 'a') as f:
+            f.write(memory_chunk + '\n')
             
     def process_image(self):
         '''
@@ -200,6 +207,7 @@ class ImageSubscriber(Node):
             
             self.structured_output = json.loads(chat_completion.choices[0].message.content)
             self.memory_chunk = json.dumps({**self.structured_output,**self.get_location_memory()})
+            self.write_to_file(self.memory_chunk)
             self.embed_and_save_memory()
             self.memory_chunk = None
             
