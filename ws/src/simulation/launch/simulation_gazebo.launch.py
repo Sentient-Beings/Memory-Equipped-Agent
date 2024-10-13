@@ -30,7 +30,7 @@ def generate_launch_description():
     world = os.path.join(
         get_package_share_directory('simulation'),
         'worlds',
-        'house_10.world'
+        'house_10v1.world'
     )
 
     gzserver_cmd = IncludeLaunchDescription(

@@ -131,8 +131,8 @@ class Navigation(Node):
         self.goal_pose.header.stamp = self.navigator.get_clock().now().to_msg()
         self.goal_pose.pose.position.x = goal_pose_x
         self.goal_pose.pose.position.y = goal_pose_y
-        self.goal_pose.pose.orientation.w = self.initial_pose.pose.orientation.w
-        self.goal_pose.pose.orientation.z = self.initial_pose.pose.orientation.z
+        self.goal_pose.pose.orientation.w = 1.0
+        self.goal_pose.pose.orientation.z = 0.0
         
         self.navigator.goToPose(self.goal_pose)
         i = 0
