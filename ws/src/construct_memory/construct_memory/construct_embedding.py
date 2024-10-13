@@ -118,8 +118,8 @@ class ImageSubscriber(Node):
         self.robot_y = self.latest_odometry_msg.pose.pose.position.y
         now = datetime.now()
         self.location_memory = {
-            'Robot x coordinate': self.robot_x + 1,
-            'Robot y coordinate': self.robot_y + 1,
+            'Robot x coordinate': self.robot_x,
+            'Robot y coordinate': self.robot_y,
             'Timestamp': now.strftime("%Y-%m-%d %H:%M:%S")
         }
         return self.location_memory
@@ -129,6 +129,12 @@ class ImageSubscriber(Node):
         This function is called whenever a new image is received.
         '''
         self.latest_image_msg = msg
+    
+    def get_similar_chunks(self, chunk):
+        '''
+        This function is used to get similar chunks from the vector store.
+        '''
+        return self.vector_store.similarity_search(chunk, k=3)
     
     def embed_and_save_memory(self):
         '''

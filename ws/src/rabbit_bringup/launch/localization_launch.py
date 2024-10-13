@@ -15,7 +15,7 @@ from launch.actions import TimerAction
 def generate_launch_description():
     package_name = 'rabbit_bringup'
     bringup_dir = get_package_share_directory(package_name)
-    default_map_path = os.path.join(bringup_dir, 'maps', 'map_final.yaml')
+    default_map_path = os.path.join(bringup_dir, 'maps', 'map_final_v2.yaml')
  
     namespace = LaunchConfiguration('namespace')
     map_yaml_file = LaunchConfiguration('map', default=default_map_path)
@@ -34,7 +34,7 @@ def generate_launch_description():
     # TODO(orduno) Substitute with `PushNodeRemapping`
     #              https://github.com/ros2/launch_ros/issues/56
     remappings = [('/tf', 'tf'),
-                  ('/tf_static', 'tf_static')]
+                  ('/tf_static', 'tf_static')] 
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
