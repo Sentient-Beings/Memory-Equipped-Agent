@@ -20,7 +20,7 @@
     ],
     "mounts": [
        "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
-       "source=/dev,target=/dev,type=bind,consistency=cached" //TODO: this is sort of terrible but other options are too complicated for recognizing detached/reattached devices
+       "source=/dev,target=/dev,type=bind,consistency=cached"
     ],
 
     "postCreateCommand": [
