@@ -3,6 +3,13 @@ from PIL import Image
 import os
 import threading
 from retriever_agent import RetrieverAgent
+'''
+This is the user interface for the RAG-based navigation chat.
+You can use this to chat with the retriever agent and ask it to navigate to a specific location.
+After the agent has processed your query, it will return a list of context that are relevant to your query and navigate to the location.
+
+Press 'Exit' to close the chat.
+'''
 
 class RAGNavigationGUI:
     def __init__(self):
