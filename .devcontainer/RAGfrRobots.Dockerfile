@@ -68,6 +68,14 @@ RUN usermod -a -G plugdev $USERNAME
 USER $USERNAME
 
 RUN pip install --user --upgrade numpy==1.26.2
+RUN pip install langchain
+RUN pip install langchain-community
+RUN pip install langchain-pinecone
+RUN pip install groq
+RUN pip install sentence-transformers
+RUN pip install langchain-groq
+RUN pip install langgraph
+RUN pip install customtkinter
 
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 RUN echo "source /usr/share/gazebo/setup.sh" >> ~/.bashrc
