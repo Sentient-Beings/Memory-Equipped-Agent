@@ -46,6 +46,8 @@ class ImageSubscriber(Node):
         super().__init__('image_subscriber')
         self.image_callback_group = MutuallyExclusiveCallbackGroup()
         self.odometry_callback_group = MutuallyExclusiveCallbackGroup()
+        self.declare_parameter('write_to_file', 'False')
+        self.write_to_file = self.get_parameter('write_to_file').value
         
         # embedding model
         self.get_logger().info('Initializing embedding model...')
@@ -148,8 +150,8 @@ class ImageSubscriber(Node):
             documents = [memory_chunk]
             uuids = [str(uuid4())]
             '''
-            get similar chunks with respect to my chunk 
-            compare the similarity score with all the retrieved chunks ( according to the threshold)
+            TODO: get similar chunks with respect to my chunk 
+            compare the similarity score with all the retrieved chunks (according to the threshold)
             remove the old one and store the new one 
             '''
             self.vector_store.add_documents(documents=documents, ids=uuids)
@@ -213,7 +215,8 @@ class ImageSubscriber(Node):
             
             self.structured_output = json.loads(chat_completion.choices[0].message.content)
             self.memory_chunk = json.dumps({**self.structured_output,**self.get_location_memory()})
-            self.write_to_file(self.memory_chunk)
+            if self.write_to_file == 'True':
+                self.write_to_file(self.memory_chunk)
             self.embed_and_save_memory()
             self.memory_chunk = None
             
