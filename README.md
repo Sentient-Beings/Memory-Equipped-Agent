@@ -8,7 +8,7 @@
 [Sentient Beings](https://sentient-beings.github.io/) is a open-source organization that is on a mission to build agentic robots. Each project in this organization is designed to be self-contained and we do that by creating a docker container for each project. That includes the dependencies and source code for that project. This helps us get around the "works on my machine" problem.
 
 ## Getting Started
-This repository contains the idea and code behind the development of the Agentic Robot with Memory, a RAG based system for robots.
+This repository focuses on the development of an Agentic Robot with Memory, a RAG based system for robots.
 
 ### Pre requisites
 * [Install Docker Engine](https://docs.docker.com/engine/install/)
